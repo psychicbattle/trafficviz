@@ -17,7 +17,7 @@ from scripts.traffic_plot import modify_doc
 import pandas as pd
 
 import os
-dataset_f = os.environ["citationscsv"]
+dataset_f = "traffic.csv" #os.environ["citationscsv"]
 
 dataset = pd.read_csv(dataset_f)
 #drop datasets without coordinates
