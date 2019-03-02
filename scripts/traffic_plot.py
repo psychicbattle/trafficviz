@@ -12,6 +12,7 @@ import os
 
 from bokeh.models import GMapOptions
 from bokeh.plotting import gmap
+from bokeh.models.tools import WheelZoomTool
 
 colors_to_violations = {"INSPECTION":"blue","STOP/YIELD":"yellow","SPEEDING":"red","CROSSWALK":"orange"}
 
@@ -77,6 +78,9 @@ def modify_doc(dataset_coords):
         api_key = os.environ["GOOGLE_API_KEY"]
 
         p = gmap(api_key, map_options, title="Somerville Traffic Enforcement")
+        geomap_wheel_zoom = WheelZoomTool()
+        p.add_tools(geomap_wheel_zoom)
+        p.toolbar.active_scroll = geomap_wheel_zoom
 
         data = dict(lat=src.data["Y"],lon=src.data["X"],color=src.data["color"],
                    ViolationType=src.data["ViolationType"])
