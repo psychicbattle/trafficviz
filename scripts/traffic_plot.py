@@ -1,5 +1,11 @@
 from bokeh.models import CategoricalColorMapper, HoverTool, ColumnDataSource, Panel
-from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup
+from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup, DateRangeSlider, RangeSlider
+
+import numpy as np
+
+from datetime import date
+from datetime import datetime
+from datetime import timedelta
 
 from bokeh.layouts import column, row, WidgetBox
 from bokeh.palettes import Category20_16
@@ -17,17 +23,20 @@ from bokeh.models.tools import WheelZoomTool
 colors_to_violations = {"INSPECTION":"blue","STOP/YIELD":"yellow","SPEEDING":"red","CROSSWALK":"orange"}
 
 
-def modify_doc(dataset_coords):
+def modify_doc(dataset_coords, datetimes):
 
     tooltips =[('Violation Type', '@ViolationType'),
                                     ('Speed Limit', '@SpeedLimit'),
                                     ('Vehicle Speed', '@VehicleSpeed')]
 
-    def make_dataset(violations_list, warnings_value, speeding_over_limit = 0):
+    def make_dataset(violations_list, warnings_value, min_date, max_date, speeding_over_limit = 0):
         applicable_violations = pd.DataFrame(columns=['ViolationType','X','Y','SpeedLimit','VehicleSpeed','color','border_color'])
+        above_min = np.datetime64(min_date) < datetimes
+        below_max = np.datetime64(max_date) > datetimes
 
+        time_sorted = dataset_coords[np.logical_and(above_min,below_max)]
         for i, violation in enumerate(violations_list):
-            subset = dataset_coords[dataset_coords["chgdesc"].str.contains(violation)]
+            subset = time_sorted[time_sorted["chgdesc"].str.contains(violation)]
             if warnings_value == "CITATIONS":
                 subset = subset[subset["warning"]!="Y"]
             if warnings_value == "WARNINGS":
@@ -68,11 +77,11 @@ def modify_doc(dataset_coords):
 
         return p
 
-    def make_plot(src):
+    def make_plot(src, alpha):
         # Blank plot with correct labels
         #42.387035, -71.107639
         #print(src)
-        map_options = GMapOptions(lat=42.387035, lng=-71.107639, map_type="roadmap", zoom=13)
+        map_options = GMapOptions(lat=42.397035, lng=-71.107639, map_type="roadmap", zoom=13)
 
         # Replace the value below with your personal API key:
         api_key = os.environ["GOOGLE_API_KEY"]
@@ -92,7 +101,7 @@ def modify_doc(dataset_coords):
             p.circle(x=-1,y=-1,size=0,fill_color=colors_to_violations[key], fill_alpha=1,legend=key)
 
         current_circles = p.circle(x="lon", y="lat", size=8, fill_color='color',
-                                   fill_alpha=0.05, source=data, line_alpha=0)#legend='ViolationType')
+                                   fill_alpha=alpha, source=data, line_alpha=0)#legend='ViolationType')
 
         # Hover tool with vline mode
         #hover = HoverTool(tooltips=[('Violation Type', '@ViolationType'),
@@ -112,8 +121,9 @@ def modify_doc(dataset_coords):
     def update(attr, old, new):
         violations_to_plot = [violation_selection.labels[i] for i in violation_selection.active]
         warnings = warn_selection.labels[warn_selection.active]
-
-        new_src = make_dataset(violations_to_plot, warnings)
+        min_date, max_date = date_selector.value_as_datetime
+        alpha = alpha_slider.value
+        new_src = make_dataset(violations_to_plot, warnings, min_date, max_date, alpha)
         global p, current_circles
         #p.reset.emit()
         #p['plot_obj'].legend[0].legends.pop(0)
@@ -121,7 +131,7 @@ def modify_doc(dataset_coords):
                    ViolationType=new_src.data["ViolationType"])
         current_circles.visible = False
         current_circles = p.circle(x="lon", y="lat", size=8, fill_color='color',
-                                   fill_alpha=0.05, source=data, line_alpha=0)
+                                   fill_alpha=alpha, source=data, line_alpha=0)
 
         src.data.update(new_src.data)
 
@@ -132,13 +142,24 @@ def modify_doc(dataset_coords):
     warn_selection = RadioGroup(labels=["WARNINGS","CITATIONS","BOTH"], active=2)
     warn_selection.on_change('active', update)
 
+    date_selector = DateRangeSlider(title='Date', start=date(2013,8,30), 
+    value=(date(2013,8,30), date(2019,2,28)), end=date(2019,2,28), 
+    step=1, callback_policy="mouseup")
+    date_selector.on_change('value', update)
+    min_date, max_date = date_selector.value_as_datetime
+
+    alpha_slider = Slider(start=0.0, end=1, value=0.05, step=.05,
+                      title="Transparency")
+    alpha_slider.on_change('value', update)
+    alpha = alpha_slider.value
+ 
 
     initial_violations = [violation_selection.labels[i] for i in violation_selection.active]
     initial_warning = warn_selection.labels[warn_selection.active]
-    src = make_dataset(initial_violations, initial_warning)
+    src = make_dataset(initial_violations, initial_warning, min_date, max_date, alpha)
     global p
-    p = make_plot(src)
-    controls = WidgetBox(violation_selection, warn_selection)
+    p = make_plot(src, alpha)
+    controls = WidgetBox(violation_selection, warn_selection, date_selector, alpha_slider)
     layout = row(controls, p)
     tab = Panel(child=layout, title="Traffic Violations Mapping")
     return tab

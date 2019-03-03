@@ -24,8 +24,10 @@ dataset = pd.read_csv(dataset_f)
 #print(dataset["X"].isna())
 dataset_coords = dataset.dropna(subset=['X','chgdesc'])
 #print(dataset_coords["X"])
+dataset_coords = dataset_coords[dataset_coords["dtissued"].str.contains("/20",na=False)]
+datetimes = pd.read_pickle("dates.h5")
 
-maintab = modify_doc(dataset_coords)
+maintab = modify_doc(dataset_coords, datetimes)
 tabs = Tabs(tabs=[maintab])
 
 #handler=FunctionHandler(modify_doc)
