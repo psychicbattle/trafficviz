@@ -1,5 +1,5 @@
 from bokeh.models import CategoricalColorMapper, HoverTool, ColumnDataSource, Panel
-from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup, DateRangeSlider, RangeSlider
+from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup, DateRangeSlider, RangeSlider, Button
 
 import numpy as np
 
@@ -35,6 +35,10 @@ def modify_doc(dataset_coords, datetimes):
         below_max = np.datetime64(max_date) > datetimes
 
         time_sorted = dataset_coords[np.logical_and(above_min,below_max)]
+        #bad_times = dataset_coords[np.invert(np.logical_and(above_min, below_max))]
+        #print(bad_times["dtissued"]) 
+
+        print(len(time_sorted), len(dataset_coords))
         for i, violation in enumerate(violations_list):
             subset = time_sorted[time_sorted["chgdesc"].str.contains(violation)]
             if warnings_value == "CITATIONS":
@@ -118,7 +122,7 @@ def modify_doc(dataset_coords, datetimes):
 
 
 
-    def update(attr, old, new):
+    def update():
         violations_to_plot = [violation_selection.labels[i] for i in violation_selection.active]
         warnings = warn_selection.labels[warn_selection.active]
         min_date, max_date = date_selector.value_as_datetime
@@ -137,29 +141,32 @@ def modify_doc(dataset_coords, datetimes):
 
     all_violations = ["INSPECTION","STOP/YIELD","SPEEDING","CROSSWALK"]
     violation_selection = CheckboxGroup(labels=all_violations, active = [1,2,3])
-    violation_selection.on_change('active', update)
+    #violation_selection.on_change('active', update)
 
     warn_selection = RadioGroup(labels=["WARNINGS","CITATIONS","BOTH"], active=2)
-    warn_selection.on_change('active', update)
+    #warn_selection.on_change('active', update)
 
-    date_selector = DateRangeSlider(title='Date', start=date(2013,8,30), 
-    value=(date(2013,8,30), date(2019,2,28)), end=date(2019,2,28), 
+    date_selector = DateRangeSlider(title='Date', start=date(2010,1,1), 
+    value=(date(2010,1,1), date(2019,2,28)), end=date(2019,2,28), 
     step=1, callback_policy="mouseup")
-    date_selector.on_change('value', update)
+    #date_selector.on_mouseup('value', update)
     min_date, max_date = date_selector.value_as_datetime
 
     alpha_slider = Slider(start=0.0, end=1, value=0.05, step=.05,
                       title="Transparency")
-    alpha_slider.on_change('value', update)
+    #alpha_slider.on_mouseup('value', update)
     alpha = alpha_slider.value
- 
+
+    update_button = Button()
+    update_button.label = "Update"
+    update_button.on_click(update) 
 
     initial_violations = [violation_selection.labels[i] for i in violation_selection.active]
     initial_warning = warn_selection.labels[warn_selection.active]
     src = make_dataset(initial_violations, initial_warning, min_date, max_date, alpha)
     global p
     p = make_plot(src, alpha)
-    controls = WidgetBox(violation_selection, warn_selection, date_selector, alpha_slider)
+    controls = WidgetBox(violation_selection, warn_selection, date_selector, alpha_slider, update_button)
     layout = row(controls, p)
     tab = Panel(child=layout, title="Traffic Violations Mapping")
     return tab
