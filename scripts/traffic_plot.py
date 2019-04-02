@@ -20,7 +20,7 @@ from bokeh.models import GMapOptions
 from bokeh.plotting import gmap
 from bokeh.models.tools import WheelZoomTool
 
-colors_to_violations = {"INSPECTION":"blue","STOP/YIELD":"yellow","SPEEDING":"red","CROSSWALK":"#31a354"}
+colors_to_violations = {"INSPECTION":"#31a354","STOP/YIELD":"yellow","SPEEDING":"red","CROSSWALK":"blue"}
 
 CIRCLE_SIZE=10
 
