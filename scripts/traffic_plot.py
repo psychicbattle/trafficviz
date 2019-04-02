@@ -20,7 +20,9 @@ from bokeh.models import GMapOptions
 from bokeh.plotting import gmap
 from bokeh.models.tools import WheelZoomTool
 
-colors_to_violations = {"INSPECTION":"blue","STOP/YIELD":"yellow","SPEEDING":"red","CROSSWALK":"orange"}
+colors_to_violations = {"INSPECTION":"blue","STOP/YIELD":"yellow","SPEEDING":"red","CROSSWALK":"#31a354"}
+
+CIRCLE_SIZE=10
 
 
 def modify_doc(dataset_coords, datetimes):
@@ -104,7 +106,7 @@ def modify_doc(dataset_coords, datetimes):
         for key in colors_to_violations:
             p.circle(x=-1,y=-1,size=0,fill_color=colors_to_violations[key], fill_alpha=1,legend=key)
 
-        current_circles = p.circle(x="lon", y="lat", size=8, fill_color='color',
+        current_circles = p.circle(x="lon", y="lat", size=CIRCLE_SIZE, fill_color='color',
                                    fill_alpha=alpha, source=data, line_alpha=0)#legend='ViolationType')
 
         # Hover tool with vline mode
@@ -134,7 +136,7 @@ def modify_doc(dataset_coords, datetimes):
         data = dict(lat=new_src.data["Y"],lon=new_src.data["X"],color=new_src.data["color"],
                    ViolationType=new_src.data["ViolationType"])
         current_circles.visible = False
-        current_circles = p.circle(x="lon", y="lat", size=8, fill_color='color',
+        current_circles = p.circle(x="lon", y="lat", size=CIRCLE_SIZE, fill_color='color',
                                    fill_alpha=alpha, source=data, line_alpha=0)
 
         src.data.update(new_src.data)
