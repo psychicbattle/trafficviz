@@ -1,1 +1,1 @@
-web: bokeh serve --port=$PORT --num-procs=0 --address=0.0.0.0 --use-xheaders --allow-websocket-origin=trafficviz.herokuapp.com,*.callen.us main.py
+web: bokeh serve --port=$PORT --num-procs=0 --address=0.0.0.0 --use-xheaders --allow-websocket-origin=callen.us --allow-websocket-origin=trafficviz.herokuapp.com  --allow-websocket-origin=www.callen.us  main.py
